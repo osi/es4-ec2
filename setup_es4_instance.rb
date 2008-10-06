@@ -3,17 +3,48 @@
 require 'pp'
 require 'rubygems'
 require 'right_aws'
+require "optparse"
 
-$access_key = '1V94TT6HNNEJX2FZ1ZG2'
-$secret_key = 'I+S76whnjF+XmB5Lvu3g8FwuBO1yVc/kDi5VdGUw'
+options = {:ami_id => "ami-4eda3e27"}
 
-$ami_id = 'ami-4eda3e27'
+opts = OptionParser.new do |opts|
+  opts.banner = "Usage:  #{File.basename($PROGRAM_NAME)} [options]"
+  
+  opts.separator ""
+  opts.separator "Specific Options:"
+  
+  opts.on( "-a", "--access-key ACCESS_KEY", "Your AWS access key ID." ) do |opt|
+    options[:access_key] = opt
+  end
+  
+  opts.on( "-s", "--secret-key SECRET_KEY", "Your AWS secret access key." ) do |opt|
+    options[:secret_key] = opt
+  end
+  
+  opts.on( "-m", "--ami-id AMI_ID", "ID of the AMI to launch" ) do |opt|
+    options[:ami_id] = opt
+  end
+  
+  opts.separator "Common Options:"
+  
+  opts.on( "-h", "--help", "Show this message." ) do
+    puts opts
+    exit
+  end  
+end
+
+opts.load
+opts.parse!(ARGV)
+
+if options[:access_key].nil? or options[:secret_key].nil?
+  opts.abort("Must specify --access-key and --secret-key")
+end
 
 # -------
 
-$ec2 = RightAws::Ec2.new($access_key, $secret_key)
+$ec2 = RightAws::Ec2.new(options[:access_key], options[:secret_key])
 
-$instance = $ec2.run_instances($ami_id, 1, 1, ['default'], 'ec2-electrotank-peter', File.new('init.sh').read)[0]
+$instance = $ec2.run_instances(options[:ami_id], 1, 1, ['default'], 'ec2-electrotank-peter', File.new('init.sh').read)[0]
 
 # pp $instance
 
