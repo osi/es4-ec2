@@ -7,6 +7,7 @@
 #
 
 require 'fileutils'
+require "optparse"
 require '/var/spool/ec2/meta-data'
 
 $electroserver_version = "4.0.5"
@@ -45,17 +46,22 @@ def update_electroserver_configuration
                    "tar --strip-components 1 --directory /tmp/derby -xvf /tmp/derby.tar.gz",
                    "Unable to expand /tmp/derby.tar.gz"
 
-  puts "Adding Gateway Listeners"
+  puts "Updating ES4 Configuration"
   IO.popen("java -cp '/tmp/derby/lib/derbytools.jar:/tmp/derby/lib/derby.jar' org.apache.derby.tools.ij", "w") do |derby|
     derby.puts "CONNECT 'jdbc:derby:#{$install_root}/server/db';"
+
+    derby.puts "UPDATE GATEWAYLISTENERS SET HOSTNAME = '0.0.0.0';"
     
     ports = [9898, 9899, 1935, 8989]
     
     (1..2).each do |gateway_id|
-      (0..3).each do |protocol|
-        derby.puts "INSERT INTO GATEWAYLISTENERS (GATEWAYID, HOSTNAME, PORT, PROTOCOLID) VALUES(#{gateway_id}, '#{EC2[:public_ipv4]}', #{ports[protocol]}, #{protocol + 1});"
+      (0..ports.length).each do |protocol|
+        derby.puts "INSERT INTO GATEWAYLISTENERS (GATEWAYID, HOSTNAME, PORT, PROTOCOLID) VALUES(#{gateway_id}, '0.0.0.0', #{ports[protocol]}, #{protocol + 1});"
       end
     end
+    
+    # derby.puts "UPDATE REGISTRYSETTINGS SET LISTENERIP = '#{EC2[:local_ipv4]}';"
+    # derby.puts "UPDATE GATEWAYS SET PASSPHRASE = '#{options[:passphrase]}' WHERE GATEWAYID = 2;"
     
     derby.close
   end
@@ -121,7 +127,36 @@ end
 
 # ------
 
-$mode = (ARGV[0] || "StandAlone").to_sym
+options = {}
+opts = OptionParser.new do |opts|
+  opts.banner = "Usage:  #{File.basename($PROGRAM_NAME)} [options]"
+  
+  opts.separator ""
+  opts.separator "Specific Options:"
+  
+  opts.on( "-m", "--mode MODE", [:StandAlone, :Registry, :Gateway], "ElectroServer mode to use (StandAlone, Gateway, Registry)" ) do |opt|
+    options[:mode] = opt
+  end
+  
+  opts.on( "-p", "--passphrase PASSPHRASE", "Passphrase to use for gateway/registry communication" ) do |opt|
+    options[:passphrase] = opt
+  end
+  
+  opts.separator "Common Options:"
+  
+  opts.on( "-h", "--help", "Show this message." ) do
+    puts opts
+    exit
+  end  
+end
+
+opts.parse!(ARGV)
+
+if options[:mode].nil?
+  opts.abort("Must specify --mode and --passphrase")
+end
+
+$mode = options[:mode]
 
 puts "Setting up #{$mode} ElectroServer instance... "
 
