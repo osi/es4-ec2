@@ -1,9 +1,5 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env ruby -KU
 
-
-# (0...50).map{ ('a'..'z').to_a[rand(26)] }.join
-
-require 'pp'
 require 'electro_aws'
 require "optparse"
 
@@ -15,19 +11,20 @@ opts = OptionParser.new do |opts|
   opts.separator ""
   opts.separator "Specific Options:"
   
-  opts.on( "-a", "--access-key ACCESS_KEY", "Your AWS access key ID." ) do |opt|
+  opts.on( "-a", "--access-key access_key", "Your AWS access key ID." ) do |opt|
     aws.access_key = opt
   end
   
-  opts.on( "-s", "--secret-key SECRET_KEY", "Your AWS secret access key." ) do |opt|
+  opts.on( "-s", "--secret-key secret_key", "Your AWS secret access key." ) do |opt|
     aws.secret_key = opt
   end
   
-  opts.on( "-i", "--ami-id AMI_ID", "ID of the AMI to launch" ) do |opt|
+  opts.on( "-i", "--ami-id ami_id", "ID of the AMI to launch" ) do |opt|
     aws.ami_id = opt
   end
   
-  opts.on( "-m", "--mode MODE", [:StandAlone, :Distributed], "ElectroServer mode to use (StandAlone, Distributed)" ) do |opt|
+  modes = [:StandAlone, :Distributed]
+  opts.on( "-m", "--mode mode", modes, "ElectroServer mode to use (#{modes.join(', ')})" ) do |opt|
     aws.mode = opt
   end
   
