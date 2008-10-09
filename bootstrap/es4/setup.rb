@@ -85,7 +85,7 @@ module ElectroServer
           run.puts <<-EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <GatewayConfiguration>
-  <Name>Gateway #{EC2[:ami_launch_index] + 1}</Name>
+  <Name>Gateway #{EC2[:ami_launch_index].to_i + 1}</Name>
   <PassPhrase>#{@passphrase}</PassPhrase>
   <RegistryListener>
     <Host>#{@registry}</Host>
@@ -100,7 +100,7 @@ EOF
           
           (1..@gateways).each do |gateway|
             derby.puts "INSERT INTO Gateways (gatewayName, passPhrase, registryConnections) VALUES ('Gateway #{gateway}', '#{@passphrase}', 100);"
-            ports.each_with_index do |port, index|
+            PORTS.each_with_index do |port, index|
               derby.puts "INSERT INTO GATEWAYLISTENERS (GATEWAYID, HOSTNAME, PORT, PROTOCOLID) VALUES(#{gateway + 2}, '0.0.0.0', #{port}, #{index + 1});"
             end
           end
