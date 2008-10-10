@@ -12,10 +12,10 @@ require '/var/spool/ec2/meta-data'
 class Shell
   CURL_OPTS = "-s -S -f -L --retry 7"
   
-  def Shell.do(name, command)
+  def Shell.do(name, command, test = lambda { |result| result.success? } )
     puts name
     system command
-    raise "failed : #{command} : code #{$?.exitstatus}" unless $?.success?
+    raise "failed : #{command} : code #{$?.exitstatus}" unless test.call($?)
   end
 
   def Shell.fetch(src, target)
@@ -44,6 +44,7 @@ module ElectroServer
   VERSION = "4.0.5"
   NAMED_VERSION = "ElectroServer_#{VERSION.gsub('.','_')}"
   DISTRIBUTION = "http://www.electro-server.com/downloads/builds/#{NAMED_VERSION}_unix.tar.gz"
+  PATCH = "http://dev.electrotank.com/ec2/patches/es-#{VERSION}.tar.gz"
   INSTALL_ROOT = "/opt/electroserver"
   TARBALL = "/tmp/es-#{VERSION}.tar.gz"
   MODES = [:StandAlone, :Registry, :Gateway]
@@ -77,7 +78,7 @@ module ElectroServer
       
       User.new
       
-      Shell.do "Downloading and extracting #{DISTRIBUTION}","curl #{Shell::CURL_OPTS} #{DISTRIBUTION} | tar --strip-components 1 --directory #{INSTALL_ROOT} -xzf - #{NAMED_VERSION}/server"
+      download
       
       case @mode
       when :Gateway
@@ -97,6 +98,8 @@ EOF
       when :Registry
         Derby.open("#{ES_ROOT}/db") do |derby|
           derby.puts "UPDATE REGISTRYSETTINGS SET LISTENERIP = '#{EC2[:local_ipv4]}';"
+          derby.puts "DELETE FROM GATEWAYLISTENERS;"
+          derby.puts "DELETE FROM Gateways;"
           
           (1..@gateways).each do |gateway|
             derby.puts "INSERT INTO Gateways (gatewayName, passPhrase, registryConnections) VALUES ('Gateway #{gateway}', '#{@passphrase}', 100);"
@@ -118,6 +121,12 @@ EOF
       Permissions.update
 
       update_motd
+    end
+    
+    def download
+      Shell.do "Downloading and extracting #{DISTRIBUTION}", "curl #{Shell::CURL_OPTS} #{DISTRIBUTION} | tar --strip-components 1 --directory #{INSTALL_ROOT} -xzf - #{NAMED_VERSION}/server"
+      
+      Shell.do "Downloading and extracting #{PATCH}", "curl #{Shell::CURL_OPTS} #{PATCH} | tar --directory #{INSTALL_ROOT}/server/lib -xzf -", lambda { |result| result.success? or result.exitstatus == 22 }
     end
     
     def start
@@ -155,6 +164,8 @@ ElectroServer #{@mode} #{VERSION} has been installed.
 Enjoy!
 EOF
       end
+      
+      FileUtils.cp "/etc/motd.tail", "/var/run/motd"
     end
 
   end
