@@ -56,7 +56,9 @@ end
 opts.load
 opts.parse!(ARGV)
 
-if aws.access_key.nil? or aws.secret_key.nil?
+if aws.mode.nil?
+  opts.abort "Must specify --mode"
+elsif aws.access_key.nil? or aws.secret_key.nil?
   opts.abort "Must specify --access-key and --secret-key"
 elsif aws.keypair.nil?
   opts.abort "Must specify -keyname"
