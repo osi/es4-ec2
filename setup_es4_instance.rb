@@ -36,8 +36,12 @@ opts = OptionParser.new do |opts|
     aws.keypair = keypair
   end
   
-  opts.on( "--gateways count", Integer, "Number of gateways to launch when in distributed mode. Defaults to 1" ) do |opt|
+  opts.on( "--gateways count", Integer, "Number of gateways to launch when in distributed mode. Defaults to 1" ) do |gateways|
     aws.gateways = gateways
+  end
+  
+  opts.on( "-d", "--debug", String, "Option description." ) do |opt|
+    aws.debug = true    
   end
   
   opts.separator ""

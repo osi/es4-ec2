@@ -4,7 +4,7 @@ require 'right_aws'
 module ElectroAws
 
   class Controller
-    attr_accessor :access_key, :secret_key, :ami_id, :mode, :groups, :gateways, :keypair
+    attr_accessor :access_key, :secret_key, :ami_id, :mode, :groups, :gateways, :keypair, :debug
     attr_reader :ec2, :passphrase
 
     def initialize
@@ -15,7 +15,9 @@ module ElectroAws
     end
 
     def provision
-      @ec2 = RightAws::Ec2.new @access_key, @secret_key
+      logger = Logger.new STDOUT
+      logger.level = Logger::WARN unless @debug
+      @ec2 = RightAws::Ec2.new @access_key, @secret_key, :logger => logger
 
       case @mode
       when :StandAlone
@@ -42,16 +44,23 @@ module ElectroAws
     def wait_for_start(*instance_ids)
       descriptors = nil
 
+      instance_ids.flatten!
+
+      puts " - waiting for #{self.type} -> #{instance_ids.join(', ')} to start .. "
+
       loop do
         descriptors = @aws.ec2.describe_instances(instance_ids)
         break if descriptors.all? { |descriptor| 'running' == descriptor[:aws_state] }
-        puts "waiting for #{self.type} / #{instance_ids} for instance(s) to start .. "
+        if descriptors.any? { |descriptor| 'terminated' == descriptor[:aws_state] }
+          puts " - INSTANCE FAILED TO START"
+          return
+        end
         sleep 5
       end
 
-      puts "#{self.type}"
+      puts " - startup complete:"
       descriptors.each do |descriptor|
-        puts "  - #{descriptor[:aws_instance_id]} - #{descriptor[:dns_name]}"
+        puts "    - #{descriptor[:aws_instance_id]} - #{descriptor[:dns_name]}"
       end
 
       descriptors
@@ -65,7 +74,7 @@ module ElectroAws
       return %Q{
 #!/bin/sh
 
-cat > /etc/motd.tail <<EOF
+cat > /var/run/motd <<EOF
 -------
 WARNING
 -------
@@ -100,6 +109,8 @@ cd es4
     end
     
     def provision
+      puts "Provisioning Distributed instance ..."
+      
       registry = Registry.new @aws
       registry.provision
 
@@ -115,8 +126,11 @@ cd es4
     end
     
     def provision
+      puts " - provisioning #{@aws.gateways} gateway(s) ..."
+      
       args = "-p #{@aws.passphrase} -r #{@registry_name}"
       instance_ids = @aws.run_instances(@aws.gateways, generate_init_script(args)).collect { |instance| instance[:aws_instance_id] }
+      wait_for_start instance_ids
     end
   end
   
@@ -124,6 +138,8 @@ cd es4
     attr_reader :dns_name
     
     def provision
+      puts " - provisioning registry ..."
+      
       args = "-g #{@aws.gateways} -p #{@aws.passphrase}"
       instance_id = @aws.run_instances(1, generate_init_script(args))[0][:aws_instance_id]
       
@@ -133,6 +149,7 @@ cd es4
   
   class StandAlone < Instance
     def provision
+      puts "Provisioning Standalone instance ..."
       wait_for_start @aws.run_instances(1, generate_init_script)[0][:aws_instance_id]
     end
   end
