@@ -132,6 +132,7 @@ cp /etc/motd.tail /var/run/motd
       puts "Provisioning Distributed instance ..."
       
       registry = Registry.new @aws
+      registry.terracotta_servers = @terracotta_servers
       registry.provision
 
       gateway = Gateway.new @aws, registry.dns_name
@@ -155,6 +156,8 @@ cp /etc/motd.tail /var/run/motd
   end
   
   class Registry < Instance
+    include Clustered
+    
     attr_reader :dns_name
     
     def provision
@@ -203,6 +206,10 @@ cp /etc/motd.tail /var/run/motd
       standalone = StandAlone.new @aws
       standalone.terracotta_servers = [tc.dns_name]
       standalone.provision
+      
+      distributed = Distributed.new @aws
+      distributed.terracotta_servers = [tc.dns_name]
+      distributed.provision
     end
   end
 end
