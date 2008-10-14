@@ -1,36 +1,18 @@
 #!/usr/bin/env ruby -wKU
 
 require 'fileutils'
+require 'bootstrap/common'
  
-def upload(filename)
-  system("scp #{filename} dev.electrotank.com:/opt/ec2")
-  raise "unable to scp #{filename} - #{$?.exitstatus}" unless $?.success?
+tarball = 'setup.tar.gz'
 
-  FileUtils.rm filename
-end
+args = Shell.prepare_tar_args( { :exclude => %w(.svn .DS_Store ._* *~),
+                                 :owner => %w(root),
+                                 :group => %w(wheel),
+                                 :directory => %w(bootstrap) 
+                               } )
 
-def append_args(args, options)
-  options.each { |name,values| values.each { |value| args.push "--#{name}=#{value}" } }
-end
+Shell.do "Creating #{tarball}", "export COPYFILE_DISABLE=true && tar #{args} --numeric-owner -czvf #{tarball} ."
 
-def archive(source, dest, options = {})
-  args = [ ]
-  
-  append_args args, :exclude  => %w(.svn .DS_Store ._),
-                    :owner => %w(root),
-                    :group => %w(wheel),
-                    :directory => %w(bootstrap)
-                    
-  append_args args, options                    
-  
-  cmdline = "tar #{args.join(' ')} --numeric-owner -czvf #{dest} #{source}"
-  
-  system(cmdline)
-  raise "unable to exec #{cmdline} - #{$?.exitstatus}" unless $?.success?
-end
- 
-archive 'es4', 'es4.tar.gz'
-upload 'es4.tar.gz' 
+Shell.do "Uploading #{tarball}", "scp #{tarball} dev.electrotank.com:/opt/ec2"
 
-archive '.', 'setup.tar.gz', :exclude => 'es4' 
-upload 'setup.tar.gz'
+FileUtils.rm tarball

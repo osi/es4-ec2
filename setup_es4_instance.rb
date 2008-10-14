@@ -23,8 +23,8 @@ opts = OptionParser.new do |opts|
     aws.ami_id = opt
   end
   
-  modes = [:StandAlone, :Distributed]
-  opts.on( "-m", "--mode mode", modes, "ElectroServer mode to use (#{modes.join(', ')})" ) do |opt|
+  modes = [:StandAlone, :Distributed, :Cluster]
+  opts.on( "-m", "--mode mode", modes, "Type of instance to setup mode to use (#{modes.join(', ')})" ) do |opt|
     aws.mode = opt
   end
   

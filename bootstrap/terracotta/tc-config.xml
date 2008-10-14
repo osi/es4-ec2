@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+  All content copyright (c) 2003-2007 Terracotta, Inc.,
+  except as may otherwise be noted in a separate copyright notice.
+  All rights reserved.
+
+-->
+<!--
+ This is a Terracotta configuration file that has been pre-configured
+ for use with DSO.  All classes are included for instrumentation,
+ and all instrumented methods are write locked.
+
+ For more information, please see the product documentation.
+-->
+<tc:tc-config xmlns:tc="http://www.terracotta.org/config"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.terracotta.org/config http://www.terracotta.org/schema/terracotta-4.xsd">
+    <servers>
+
+        <!-- Tell DSO where the Terracotta server can be found. -->
+        <server host="localhost">
+            <data>%(user.home)/terracotta/server-data</data>
+            <logs>%(user.home)/terracotta/server-logs</logs>
+        </server>
+    </servers>
+
+    <!-- Tell DSO where to put the generated client logs -->
+    <clients>
+        <logs>%(user.home)/terracotta/client-logs</logs>
+    </clients>
+
+    <application>
+        <dso>
+
+            <!-- Start by including all classes for instrumentation.
+               It's more efficient to instrument only those classes that
+               hold shared roots or are part of a shared root's graph.
+            -->
+            <instrumented-classes>
+                <include>
+                    <class-expression>*..*</class-expression>
+                </include>
+            </instrumented-classes>
+
+            <transient-fields>
+                <field-name>com.electrotank.electroserver4.entities.managers.DeliveryManagerImpl.logger</field-name>
+                <field-name>com.electrotank.electroserver4.entities.managers.DeliveryManagerImpl.gateways</field-name>
+                <field-name>com.electrotank.electroserver4.entities.managers.DeliveryManagerImpl.connectedUsers
+                </field-name>
+
+                <field-name>com.electrotank.electroserver4.entities.managers.UserEventManager.eventFactory</field-name>
+                <field-name>com.electrotank.electroserver4.entities.managers.UserEventManager.gateways</field-name>
+                <field-name>com.electrotank.electroserver4.entities.managers.UserEventManager.connectedUsers
+                </field-name>
+                <field-name>com.electrotank.electroserver4.entities.managers.UserEventManager.extensionManager
+                </field-name>
+            </transient-fields>
+
+            <distributed-methods>
+                <method-expression>
+                    void
+                    com.electrotank.electroserver4.entities.managers.DeliveryManagerImpl.deliver(com.electrotank.electroserver4.entities.SingleUserDelivery)
+                </method-expression>
+
+                <method-expression>
+                    void
+                    com.electrotank.electroserver4.entities.managers.DeliveryManagerImpl.deliver(com.electrotank.electroserver4.entities.MultiUserDelivery)
+                </method-expression>
+
+                <method-expression>
+                    void
+                    com.electrotank.electroserver4.entities.managers.UserEventManager.variableCreated(com.electrotank.electroserver4.entities.User,
+                    com.electrotank.electroserver4.entities.UserVariable)
+                </method-expression>
+
+                <method-expression>
+                    void
+                    com.electrotank.electroserver4.entities.managers.UserEventManager.variableDeleted(com.electrotank.electroserver4.entities.User,
+                    com.electrotank.electroserver4.entities.UserVariable)
+                </method-expression>
+
+                <method-expression>
+                    void
+                    com.electrotank.electroserver4.entities.managers.UserEventManager.variableUpdated(com.electrotank.electroserver4.entities.User,
+                    com.electrotank.electroserver4.entities.UserVariable,
+                    com.electrotank.electroserver4.entities.UserVariable)
+                </method-expression>
+            </distributed-methods>
+
+            <!-- Apply write level autolocks for all instrumented methods.
+               It's more efficient to create finer-grain locks as dictated
+               by your application needs.
+            -->
+            <locks>
+                <autolock>
+                    <lock-level>write</lock-level>
+                    <method-expression>* *..*.*(..)</method-expression>
+                </autolock>
+            </locks>
+
+            <roots>
+                <root>
+                    <field-name>com.electrotank.electroserver4.servers.registry.DeliveryManagerComponentAdapter.manager
+                    </field-name>
+                </root>
+
+                <root>
+                    <field-name>com.electrotank.electroserver4.servers.registry.UserEventManagerComponentAdapter.manager
+                    </field-name>
+                </root>
+
+                <root>
+                    <field-name>com.electrotank.electroserver4.entities.Users.users</field-name>
+                </root>
+
+                <root>
+                    <field-name>com.electrotank.electroserver4.entities.Users.nameToUserMap</field-name>
+                </root>
+
+                <root>
+                    <field-name>com.electrotank.electroserver4.entities.Users.currentUserCount</field-name>
+                </root>
+
+                <root>
+                    <field-name>com.electrotank.electroserver4.entities.managers.BuddyListManager.lock</field-name>
+                </root>
+
+                <root>
+                    <field-name>com.electrotank.electroserver4.entities.managers.BuddyListManager.buddiesForUser
+                    </field-name>
+                </root>
+
+                <root>
+                    <field-name>com.electrotank.electroserver4.entities.managers.BuddyListManager.usersWithBuddy
+                    </field-name>
+                </root>
+            </roots>
+        </dso>
+    </application>
+
+</tc:tc-config>

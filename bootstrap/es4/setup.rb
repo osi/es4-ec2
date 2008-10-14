@@ -8,31 +8,18 @@
 require 'fileutils'
 require "optparse"
 require '/var/spool/ec2/meta-data'
-
-class Shell
-  CURL_OPTS = "-s -S -f -L --retry 7"
-  
-  def Shell.do(name, command, test = lambda { |result| result.success? } )
-    puts name
-    system command
-    raise "failed : #{command} : code #{$?.exitstatus}" unless test.call($?)
-  end
-
-  def Shell.fetch(src, target)
-    Shell.do "Downloading #{src} ...", "curl #{CURL_OPTS} -o #{target} #{src}"
-  end
-end
+require '../common'
 
 class Derby
   TARBALL = 'http://archive.apache.org/dist/db/derby/db-derby-10.2.2.0/db-derby-10.2.2.0-bin.tar.gz'
   
   def Derby.open(database, &actions)
-    FileUtils.mkdir '/tmp/derby'
+    dir = '/tmp/derby'
+    FileUtils.mkdir dir
 
-    Shell.do "Downloading and extracting #{TARBALL}", 
-             "curl #{Shell::CURL_OPTS} #{TARBALL} | tar --strip-components 1 --directory /tmp/derby -xzf -"
+    Shell.download_and_extract TARBALL, { :strip_components => 1, :directory => dir }
 
-    IO.popen("java -cp '/tmp/derby/lib/derbytools.jar:/tmp/derby/lib/derby.jar' org.apache.derby.tools.ij", "w") do |derby|
+    IO.popen("java -cp '#{dir}/lib/derbytools.jar:#{dir}/lib/derby.jar' org.apache.derby.tools.ij", "w") do |derby|
       derby.puts "CONNECT 'jdbc:derby:#{database}';"
       actions.call(derby)
       derby.close
@@ -51,32 +38,13 @@ module ElectroServer
   ES_ROOT = "#{INSTALL_ROOT}/server"
   PORTS = [9898, 9899, 1935, 8989]
 
-  class User
-    NAME = 'electroserver'
-    
-    def initialize
-      Shell.do "Creating '#{NAME}' user", "adduser --system --group --home #{INSTALL_ROOT} #{NAME}"
-
-      FileUtils.mkdir_p INSTALL_ROOT
-      FileUtils.chown NAME, NAME, INSTALL_ROOT
-      FileUtils.chmod 02775, INSTALL_ROOT
-    end
-  end
-
-  class Permissions
-    def Permissions.update
-      Shell.do "Fixing ownership", "chown -R #{User::NAME}.#{User::NAME} #{INSTALL_ROOT}"
-      Shell.do "Fixing permissions", "chmod -R g+w,g+s,g+r #{INSTALL_ROOT}"
-    end
-  end
-  
   class Installer
-    attr_accessor :mode, :passphrase, :gateways, :registry
+    attr_accessor :mode, :passphrase, :gateways, :registry, :terracotta_servers
 
     def install
       puts "Setting up ElectroServer #{@mode} instance... "
       
-      User.new
+      user = User.new 'electroserver', INSTALL_ROOT
       
       download
       
@@ -112,50 +80,43 @@ EOF
         Derby.open("#{ES_ROOT}/db") { |derby| derby.puts "UPDATE GATEWAYLISTENERS SET HOSTNAME = '0.0.0.0';" }
       end
       
-      setup_service
-
-      Permissions.update
-
-      start
-
-      Permissions.update
+      service = setup_service(user)
+      
+      if not @terracotta_servers.nil?
+        File.open("#{user.home}/service/env/TC_CONFIG_PATH", 'w') do |run|
+          run.puts(@terracotta_servers.map { |server| "#{server}:9510" }.join(","))
+        end
+      end
+      
+      service.start
 
       update_motd
     end
     
     def download
-      Shell.do "Downloading and extracting #{DISTRIBUTION}", "curl #{Shell::CURL_OPTS} #{DISTRIBUTION} | tar --strip-components 1 --directory #{INSTALL_ROOT} -xzf - #{NAMED_VERSION}/server"
+      Shell.download_and_extract DISTRIBUTION, { :strip_components => 1, :directory => INSTALL_ROOT, :to_extract => "#{NAMED_VERSION}/server"}
       
-      Shell.do "Downloading and extracting #{PATCH}", "curl #{Shell::CURL_OPTS} #{PATCH} | tar --directory #{INSTALL_ROOT}/server/lib -xzf -", lambda { |result| result.success? or result.exitstatus == 22 }
+      Shell.download_and_extract PATCH, { :directory => "#{INSTALL_ROOT}/server/lib", :success_test => lambda { |result| result.success? or result.exitstatus == 22 } }
     end
     
-    def start
-      puts "Starting ElectroServer ..."
-      FileUtils.ln_s "#{INSTALL_ROOT}/service", "/service/electroserver"
-      sleep 5
-    end
-
-    def setup_service
+    def setup_service(user)
       puts "Setting up service ..."
 
       FileUtils.cp 'bin/run.sh', ES_ROOT
       MODES.each { |mode| FileUtils.ln_s "#{ES_ROOT}/run.sh", "#{ES_ROOT}/#{mode}" }
 
-      run_script = "#{INSTALL_ROOT}/service/run"
-      FileUtils.cp_r "service", "#{INSTALL_ROOT}"
-      File.open(run_script, 'w') do |run|
-        run.puts <<-EOF
+      service = Service.new "ElectroServer", user
+      service.run_script = <<-EOF
 #!/bin/sh
 dir=`pwd -P`
 echo "*** starting electroserver"
-exec 2>&1 envdir ./env setuidgid #{User::NAME} $dir/../server/#{@mode}
+exec 2>&1 envdir ./env setuidgid #{user.name} $dir/../server/#{@mode}
 EOF
-      end
-      FileUtils.chmod 0770, run_script 
+      service
     end
 
     def update_motd
-      File.open("/etc/motd.tail", "w") do |motd|
+      File.open("/etc/motd.tail", "a") do |motd|
         motd.puts <<-EOF
 Electrotank setup is complete.
 
@@ -164,8 +125,6 @@ ElectroServer #{@mode} #{VERSION} has been installed.
 Enjoy!
 EOF
       end
-      
-      FileUtils.cp "/etc/motd.tail", "/var/run/motd"
     end
 
   end
@@ -195,6 +154,10 @@ opts = OptionParser.new do |opts|
   
   opts.on( "-r", "--registry registry", String, "DNS name of registry for distributed mode" ) do |registry|
     installer.registry = registry
+  end
+  
+  opts.on( "-t", "--terracotta-servers servers", Array, "List of Terracotta servers to address" ) do |terracotta_servers|
+    installer.terracotta_servers = terracotta_servers
   end
   
   opts.separator "Common Options:"

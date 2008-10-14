@@ -1,0 +1,77 @@
+class Shell
+  CURL_OPTS = "-s -S -f -L --retry 7"
+
+  def Shell.do(name, command, test = nil )
+    test = lambda { |result| result.success? } if test.nil?
+
+    puts name
+    system command
+    raise "failed : #{command} : code #{$?.exitstatus}" unless test.call($?)
+  end
+
+  def Shell.prepare_tar_args(args)
+    args.map do |name, values| 
+      values = [values] if not values.kind_of? Array
+      values.map { |value| "--#{name.to_s.gsub('_', '-')}=#{value}" } 
+    end.flatten.join( ' ' )    
+  end
+
+  def Shell.download_and_extract(tarball, options)
+    options = Hash.new if options.nil?
+    test = options.delete :success_test
+    to_extract = options.delete :to_extract
+
+    Shell.do "Downloading and extracting #{tarball}", "curl #{Shell::CURL_OPTS} #{tarball} | tar #{Shell::prepare_tar_args(options)} -xzf - #{to_extract}", test
+  end
+end
+
+class User
+  attr_accessor :name, :home
+  
+  def initialize(name, home)
+    @name = name
+    @home = home
+
+    Shell.do "Creating '#{@name}' user", "adduser --system --group --home #{@home} #{@name}"
+
+    FileUtils.mkdir_p @home
+    FileUtils.chown @name, @name, @home
+    FileUtils.chmod 02775, @home
+  end
+
+  def update_permissions
+    Shell.do "Fixing ownership", "chown -R #{@name}.#{@name} #{@home}"
+    Shell.do "Fixing permissions", "find #{@home} -type f -exec chmod g+r,g+w {} \\;"
+    Shell.do "Fixing permissions", "find #{@home} -type d -exec chmod 02775 {} \\;"
+  end
+end
+
+class Service
+  def initialize(name, user)
+    @name = name
+    @root = user.home
+    @user = user
+    
+    FileUtils.cp_r "service", "#{@root}"
+  end
+  
+  def run_script=(script)
+    run_script = "#{@root}/service/run"
+    File.open(run_script, 'w') do |run|
+      run.puts script
+    end
+    FileUtils.chmod 0770, run_script 
+  end
+
+  def start
+    puts "Starting #{@name} ..."
+
+    @user.update_permissions
+
+    FileUtils.ln_s "#{@root}/service", "/service/#{@name.downcase}"
+    sleep 5
+
+    @user.update_permissions
+  end
+  
+end

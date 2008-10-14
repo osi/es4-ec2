@@ -1,0 +1,15 @@
+#!/bin/sh
+dir=`pwd -P`
+tc_install_dir=$dir/../terracotta
+echo "*** starting terracotta"
+exec 2>&1 \
+    envdir ./env \
+    setuidgid terracotta \
+    java \
+    -server -Xms256m -Xmx256m -XX:+HeapDumpOnOutOfMemoryError \
+    -Dcom.sun.management.jmxremote \
+    -Dtc.install-root="${tc_install_dir}" \
+    -Dtc.config=/opt/terracotta/tc-config.xml \
+    -cp "${tc_install_dir}/lib/tc.jar" \
+    com.tc.server.TCServerMain
+

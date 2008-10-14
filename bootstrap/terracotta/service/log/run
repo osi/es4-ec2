@@ -1,0 +1,4 @@
+#!/bin/sh
+# run script for logging "terracotta" daemon
+exec multilog t s1048576 ./main
+# that's all, folks!

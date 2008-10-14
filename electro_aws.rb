@@ -24,6 +24,8 @@ module ElectroAws
         instance = StandAlone.new self
       when :Distributed 
         instance = Distributed.new self
+      when :Cluster
+        instance = Cluster.new self
       else
         raise "Unknown mode: #{@mode}"
       end
@@ -52,8 +54,7 @@ module ElectroAws
         descriptors = @aws.ec2.describe_instances(instance_ids)
         break if descriptors.all? { |descriptor| 'running' == descriptor[:aws_state] }
         if descriptors.any? { |descriptor| 'terminated' == descriptor[:aws_state] }
-          puts " - INSTANCE FAILED TO START"
-          return
+          raise "INSTANCE FAILED TO START"
         end
         sleep 5
       end
@@ -69,8 +70,15 @@ module ElectroAws
     def console_output(instance_id)
       @aws.ec2.get_console_output(instance_id)[:aws_output]
     end
+    
+    def es4_init_script(args = "")
+      args << " -t #{@terracotta_servers.join(',')}" if not @terracotta_servers.nil?
+      generate_init_script "cd es4 && ./setup.rb -m #{self.type} #{args} && cd .."
+    end
 
-    def generate_init_script(args = nil)
+    def generate_init_script(*modules)
+      modules.flatten!
+      
       return %Q{
 #!/bin/sh
 
@@ -82,6 +90,9 @@ WARNING
 Electrotank setup is still in progress
 EOF
 
+rm /etc/motd.tail
+touch /etc/motd.tail
+
 mkdir -p /opt/setup
 
 cd /opt/setup
@@ -89,10 +100,9 @@ curl -s -S -f -L --retry 7 http://dev.electrotank.com/ec2/setup.tar.gz | tar xzf
 
 ./fetchec2metadata.rb
 
-curl -s -S -f -L --retry 7 http://dev.electrotank.com/ec2/es4.tar.gz | tar xzf - 
+#{modules.join("\n")}
 
-cd es4
-./setup.rb -m #{self.type} #{args}
+cp /etc/motd.tail /var/run/motd
 
 # rm -rf /opt/setup      
       }
@@ -102,8 +112,18 @@ cd es4
       self.class.to_s.split('::').last
     end
   end
+  
+  module Clustered
+    
+    def terracotta_servers=(servers)
+      @terracotta_servers = servers
+    end
+    
+  end
 
   class Distributed
+    include Clustered
+    
     def initialize(aws)
       @aws = aws
     end
@@ -129,7 +149,7 @@ cd es4
       puts " - provisioning #{@aws.gateways} gateway(s) ..."
       
       args = "-p #{@aws.passphrase} -r #{@registry_name}"
-      instance_ids = @aws.run_instances(@aws.gateways, generate_init_script(args)).collect { |instance| instance[:aws_instance_id] }
+      instance_ids = @aws.run_instances(@aws.gateways, es4_init_script(args)).collect { |instance| instance[:aws_instance_id] }
       wait_for_start instance_ids
     end
   end
@@ -141,16 +161,48 @@ cd es4
       puts " - provisioning registry ..."
       
       args = "-g #{@aws.gateways} -p #{@aws.passphrase}"
-      instance_id = @aws.run_instances(1, generate_init_script(args))[0][:aws_instance_id]
+      instance_id = @aws.run_instances(1, es4_init_script(args))[0][:aws_instance_id]
       
       @dns_name = wait_for_start(instance_id)[0][:private_dns_name]
     end
   end
   
   class StandAlone < Instance
+    include Clustered
+    
     def provision
       puts "Provisioning Standalone instance ..."
-      wait_for_start @aws.run_instances(1, generate_init_script)[0][:aws_instance_id]
+      wait_for_start @aws.run_instances(1, es4_init_script)[0][:aws_instance_id]
+    end
+  end
+  
+  class Terracotta < Instance
+    attr_reader :dns_name
+    
+    def provision
+      puts " - provisioning Terracotta server ..."
+
+      args = "cd terracotta && ./setup.rb && cd .."
+      instance_id = @aws.run_instances(1, generate_init_script(args))[0][:aws_instance_id]
+      
+      @dns_name = wait_for_start(instance_id)[0][:private_dns_name]
+    end
+  end
+  
+  class Cluster
+    def initialize(aws)
+      @aws = aws
+    end
+    
+    def provision
+      puts "Provisioning Clustered instance ..."
+      
+      tc = Terracotta.new @aws
+      tc.provision
+      
+      standalone = StandAlone.new @aws
+      standalone.terracotta_servers = [tc.dns_name]
+      standalone.provision
     end
   end
 end
