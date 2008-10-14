@@ -83,6 +83,10 @@ EOF
       service = setup_service(user)
       
       if not @terracotta_servers.nil?
+        tc = Terracotta::Installer.new
+        tc.install
+        tc.setup_client
+        
         File.open("#{user.home}/service/env/TC_CONFIG_PATH", 'w') do |run|
           run.puts(@terracotta_servers.map { |server| "#{server}:9510" }.join(","))
         end
