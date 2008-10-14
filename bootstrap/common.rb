@@ -98,11 +98,27 @@ module Terracotta
     end
     
     def setup_server
-      puts "Starting Terracotta Server"
-      FileUtils.cp "tc-config.xml", INSTALL_ROOT
+      puts "Configuring Terracotta Server"
+      
+      configure
       
       service = Service.new "Terracotta", @user
       service.start
+    end
+    
+    private 
+    
+    def configure
+      Shell.do "Installing libxslt-ruby", "apt-get install -y libxslt-ruby"
+      
+      require 'xml/libxslt'
+      
+      xslt = XML::XSLT.new
+      xslt.xml = "tc-config.xml"
+      xslt.xsl = "configure.xslt"
+      xslt.parameters = { "hostname" => EC2[:local_hostname], "id" => EC2[:instance_id] }
+      
+      xslt.save "#{INSTALL_ROOT}/tc-config.xml"
     end
   end
 end
