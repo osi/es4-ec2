@@ -1,0 +1,4 @@
+INTRODUCTION
+============
+
+This is a set of scripts for managing [ElectroServer](http://www.electro-server.com/) instances on Amazon EC2
