@@ -11,6 +11,8 @@ fi
 cd $dir
 
 exec $java_cmd \
+     -server \
+     -Xmx1500M \
      -XX:+HeapDumpOnOutOfMemoryError \
      -XX:HeapDumpPath=../ \
      -Djava.awt.headless=true \

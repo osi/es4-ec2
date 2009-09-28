@@ -11,7 +11,8 @@ require '/var/spool/ec2/meta-data'
 require '../common'
 
 class Derby
-  TARBALL = 'http://archive.apache.org/dist/db/derby/db-derby-10.2.2.0/db-derby-10.2.2.0-bin.tar.gz'
+  # TARBALL = 'http://archive.apache.org/dist/db/derby/db-derby-10.2.2.0/db-derby-10.2.2.0-bin.tar.gz'
+  TARBALL = 'http://es4.s3.amazonaws.com/db-derby-10.2.2.0-bin.tar.gz'
   
   def Derby.open(database, &actions)
     dir = '/tmp/derby'
@@ -28,13 +29,13 @@ class Derby
 end
 
 module ElectroServer
-  VERSION = "4.0.5"
+  VERSION = "4.0.6"
   NAMED_VERSION = "ElectroServer_#{VERSION.gsub('.','_')}"
-  DISTRIBUTION = "http://www.electro-server.com/downloads/builds/#{NAMED_VERSION}_unix.tar.gz"
+  # DISTRIBUTION = "http://www.electro-server.com/downloads/builds/#{NAMED_VERSION}_unix.tar.gz"
+  DISTRIBUTION = "http://es4.s3.amazonaws.com/#{NAMED_VERSION}_unix.tar.gz"
   PATCH = "http://dev.electrotank.com/ec2/patches/es-#{VERSION}.tar.gz"
   INSTALL_ROOT = "/opt/electroserver"
-  TARBALL = "/tmp/es-#{VERSION}.tar.gz"
-  MODES = [:StandAlone, :Registry, :Gateway]
+  MODES = [:StandAlone, :Registry, :Gateway, :Jet]
   ES_ROOT = "#{INSTALL_ROOT}/server"
   PORTS = [9898, 9899, 1935, 8989]
 
@@ -78,6 +79,12 @@ EOF
         end
       when :StandAlone
         Derby.open("#{ES_ROOT}/db") { |derby| derby.puts "UPDATE GATEWAYLISTENERS SET HOSTNAME = '0.0.0.0';" }
+      when :Jet
+        Derby.open("#{ES_ROOT}/db") do |derby|
+          derby.puts "UPDATE ThreadingSettings SET processorThreadCount = 100;"
+          derby.puts "UPDATE GATEWAYLISTENERS SET HOSTNAME = '0.0.0.0';"
+          derby.puts "UPDATE CommunicationSettings SET CONCURRENTUSERLIMIT = 500000;"
+        end
       end
       
       service = setup_service(user)
@@ -100,7 +107,7 @@ EOF
     def download
       Shell.download_and_extract DISTRIBUTION, { :strip_components => 1, :directory => INSTALL_ROOT, :to_extract => "#{NAMED_VERSION}/server"}
       
-      Shell.download_and_extract PATCH, { :directory => "#{INSTALL_ROOT}/server/lib", :success_test => lambda { |result| result.success? or result.exitstatus == 22 } }
+      Shell.download_and_extract PATCH, { :directory => "#{INSTALL_ROOT}/server", :success_test => lambda { |result| result.success? or result.exitstatus == 22 } }
     end
     
     def setup_service(user)
@@ -114,6 +121,7 @@ EOF
 #!/bin/sh
 dir=`pwd -P`
 echo "*** starting electroserver"
+ulimit -n 150000
 exec 2>&1 envdir ./env setuidgid #{user.name} $dir/../server/#{@mode}
 EOF
       service

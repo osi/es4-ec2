@@ -15,98 +15,104 @@
 -->
 <tc:tc-config xmlns:tc="http://www.terracotta.org/config"
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-              xsi:schemaLocation="http://www.terracotta.org/config http://www.terracotta.org/schema/terracotta-4.xsd">
-    <servers>
+              xsi:schemaLocation="http://www.terracotta.org/config http://www.terracotta.org/schema/terracotta-5.xsd">
 
-        <!-- Tell DSO where the Terracotta server can be found. -->
-        <server host="localhost">
-            <data>%(user.home)/terracotta/server-data</data>
-            <logs>%(user.home)/terracotta/server-logs</logs>
-        </server>
+    <servers>
+        <server host="%i" name="sample"/>
     </servers>
 
-    <!-- Tell DSO where to put the generated client logs -->
+    <system>
+        <configuration-model>production</configuration-model>
+    </system>
+
     <clients>
-        <logs>%(user.home)/terracotta/client-logs</logs>
+        <logs>terracotta/</logs>
     </clients>
 
     <application>
         <dso>
-
-            <!-- Start by including all classes for instrumentation.
-               It's more efficient to instrument only those classes that
-               hold shared roots or are part of a shared root's graph.
-            -->
             <instrumented-classes>
                 <include>
-                    <class-expression>*..*</class-expression>
+                    <class-expression>com.electrotank.electroserver4.entities.managers.DeliveryManagerImpl</class-expression>
+                    <honor-transient>true</honor-transient>
+                </include>
+                <include>
+                    <class-expression>com.electrotank.electroserver4.entities.SingleUserDelivery</class-expression>
+                </include>
+                <include>
+                    <class-expression>com.electrotank.electroserver4.entities.MultiUserDelivery</class-expression>
+                </include>
+                <include>
+                    <class-expression>com.electrotank.electroserver4.entities.managers.UserEventManager</class-expression>
+                    <honor-transient>true</honor-transient>
+                </include>
+                <include>
+                    <class-expression>com.electrotank.electroserver4.entities.User</class-expression>
+                    <honor-transient>true</honor-transient>
+                </include>
+                <include>
+                    <class-expression>com.electrotank.electroserver4.extensions.api.value.EsObject</class-expression>
+                </include>
+                <include>
+                    <class-expression>com.electrotank.electroserver4.entities.UserVariable</class-expression>
+                </include>
+                <include>
+                    <class-expression>com.electrotank.electroserver4.entities.BuddyListEntry</class-expression>
+                </include>
+                <include>
+                    <class-expression>com.electrotank.electroserver4.messages..</class-expression>
+                </include>
+                <include>
+                    <class-expression>com.electrotank.electroserver4.protocol.MessageType</class-expression>
+                </include>
+                <include>
+                    <class-expression>com.electrotank.electroserver4.protocol.MessageClassification</class-expression>
                 </include>
             </instrumented-classes>
 
-            <transient-fields>
-                <field-name>com.electrotank.electroserver4.entities.managers.DeliveryManagerImpl.logger</field-name>
-                <field-name>com.electrotank.electroserver4.entities.managers.DeliveryManagerImpl.gateways</field-name>
-                <field-name>com.electrotank.electroserver4.entities.managers.DeliveryManagerImpl.connectedUsers
-                </field-name>
-
-                <field-name>com.electrotank.electroserver4.entities.managers.UserEventManager.eventFactory</field-name>
-                <field-name>com.electrotank.electroserver4.entities.managers.UserEventManager.gateways</field-name>
-                <field-name>com.electrotank.electroserver4.entities.managers.UserEventManager.connectedUsers
-                </field-name>
-                <field-name>com.electrotank.electroserver4.entities.managers.UserEventManager.extensionManager
-                </field-name>
-            </transient-fields>
-
             <distributed-methods>
                 <method-expression>
-                    void
-                    com.electrotank.electroserver4.entities.managers.DeliveryManagerImpl.deliver(com.electrotank.electroserver4.entities.SingleUserDelivery)
+                    void com.electrotank.electroserver4.entities.managers.DeliveryManagerImpl.deliver(..)
                 </method-expression>
 
                 <method-expression>
-                    void
-                    com.electrotank.electroserver4.entities.managers.DeliveryManagerImpl.deliver(com.electrotank.electroserver4.entities.MultiUserDelivery)
-                </method-expression>
-
-                <method-expression>
-                    void
-                    com.electrotank.electroserver4.entities.managers.UserEventManager.variableCreated(com.electrotank.electroserver4.entities.User,
-                    com.electrotank.electroserver4.entities.UserVariable)
-                </method-expression>
-
-                <method-expression>
-                    void
-                    com.electrotank.electroserver4.entities.managers.UserEventManager.variableDeleted(com.electrotank.electroserver4.entities.User,
-                    com.electrotank.electroserver4.entities.UserVariable)
-                </method-expression>
-
-                <method-expression>
-                    void
-                    com.electrotank.electroserver4.entities.managers.UserEventManager.variableUpdated(com.electrotank.electroserver4.entities.User,
-                    com.electrotank.electroserver4.entities.UserVariable,
-                    com.electrotank.electroserver4.entities.UserVariable)
+                    void com.electrotank.electroserver4.entities.managers.UserEventManager.variable*(..)
                 </method-expression>
             </distributed-methods>
 
-            <!-- Apply write level autolocks for all instrumented methods.
-               It's more efficient to create finer-grain locks as dictated
-               by your application needs.
-            -->
             <locks>
                 <autolock>
                     <lock-level>write</lock-level>
-                    <method-expression>* *..*.*(..)</method-expression>
+                    <method-expression>* com.electrotank.electroserver4.entities.User.*(..)</method-expression>
+                </autolock>
+                <autolock>
+                    <lock-level>write</lock-level>
+                    <method-expression>* com.electrotank.electroserver4.entities.MultiUserDelivery.*(..)</method-expression>
+                </autolock>
+                <autolock>
+                    <lock-level>write</lock-level>
+                    <method-expression>* com.electrotank.electroserver4.entities.SingleUserDelivery.*(..)</method-expression>
+                </autolock>
+                <autolock>
+                    <lock-level>write</lock-level>
+                    <method-expression>* com.electrotank.electroserver4.entities.managers.UserEventManager.*(..)</method-expression>
+                </autolock>
+                <autolock>
+                    <lock-level>write</lock-level>
+                    <method-expression>void com.electrotank.electroserver4.messages.AbstractMessage.setMessageNumber(int)</method-expression>
                 </autolock>
             </locks>
 
             <roots>
                 <root>
-                    <field-name>com.electrotank.electroserver4.servers.registry.DeliveryManagerComponentAdapter.manager
+                    <field-name>
+                        com.electrotank.electroserver4.servers.registry.DeliveryManagerComponentAdapter.manager
                     </field-name>
                 </root>
 
                 <root>
-                    <field-name>com.electrotank.electroserver4.servers.registry.UserEventManagerComponentAdapter.manager
+                    <field-name>
+                        com.electrotank.electroserver4.servers.registry.UserEventManagerComponentAdapter.manager
                     </field-name>
                 </root>
 
@@ -127,12 +133,14 @@
                 </root>
 
                 <root>
-                    <field-name>com.electrotank.electroserver4.entities.managers.BuddyListManager.buddiesForUser
+                    <field-name>
+                        com.electrotank.electroserver4.entities.managers.BuddyListManager.buddiesForUser
                     </field-name>
                 </root>
 
                 <root>
-                    <field-name>com.electrotank.electroserver4.entities.managers.BuddyListManager.usersWithBuddy
+                    <field-name>
+                        com.electrotank.electroserver4.entities.managers.BuddyListManager.usersWithBuddy
                     </field-name>
                 </root>
             </roots>

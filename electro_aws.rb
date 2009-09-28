@@ -1,4 +1,4 @@
-require 'rubygems'
+# require 'rubygems'
 require 'right_aws'
 
 module ElectroAws
@@ -22,10 +22,14 @@ module ElectroAws
       case @mode
       when :StandAlone
         instance = StandAlone.new self
+      when :Jet
+        instance = Jet.new self
       when :Distributed 
         instance = Distributed.new self
       when :Cluster
         instance = Cluster.new self
+      when :LoadTester
+        instance = LoadTester.new self
       else
         raise "Unknown mode: #{@mode}"
       end
@@ -34,7 +38,7 @@ module ElectroAws
     end
     
     def run_instances(count, init_script)
-      @ec2.run_instances @ami_id, count, count, @groups, @keypair, init_script
+      @ec2.run_instances @ami_id, count, count, @groups, @keypair, init_script, nil, 'c1.medium'
     end
   end
   
@@ -96,7 +100,7 @@ touch /etc/motd.tail
 mkdir -p /opt/setup
 
 cd /opt/setup
-curl -s -S -f -L --retry 7 http://dev.electrotank.com/ec2/setup.tar.gz | tar xzf - 
+curl -s -S -f -L --retry 7 http://dev.electrotank.com/ec2/setup.tar.gz | tar xzof - 
 
 ./fetchec2metadata.rb
 
@@ -176,6 +180,33 @@ cp /etc/motd.tail /var/run/motd
     def provision
       puts "Provisioning Standalone instance ..."
       wait_for_start @aws.run_instances(1, es4_init_script)[0][:aws_instance_id]
+    end
+  end
+  
+  class Jet < Instance
+    include Clustered
+    
+    def provision
+      puts "Provisioning Jet instance ..."
+      wait_for_start @aws.run_instances(1, es4_init_script)[0][:aws_instance_id]
+    end
+  end
+  
+  class LoadTester < Instance
+    
+    def provision
+      puts "Provisioning load tester instance ..."
+      
+      script = %Q{
+#!/bin/sh
+
+mkdir -p /opt/loadtest
+
+cd /opt/loadtest
+curl -s -S -f -L --retry 7 http://dev.electrotank.com/ec2/es4-loadtester.tar.gz  | tar xzof - 
+      }
+      
+      wait_for_start @aws.run_instances(1, script)[0][:aws_instance_id]
     end
   end
   

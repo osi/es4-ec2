@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby -KU
+#!/usr/bin/ruby -rubygems
 
 require 'electro_aws'
 require "optparse"
@@ -23,7 +23,7 @@ opts = OptionParser.new do |opts|
     aws.ami_id = opt
   end
   
-  modes = [:StandAlone, :Distributed, :Cluster]
+  modes = [:StandAlone, :Distributed, :Cluster, :Jet, :LoadTester]
   opts.on( "-m", "--mode mode", modes, "Type of instance to setup mode to use (#{modes.join(', ')})" ) do |opt|
     aws.mode = opt
   end

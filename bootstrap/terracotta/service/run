@@ -6,7 +6,8 @@ exec 2>&1 \
     envdir ./env \
     setuidgid terracotta \
     java \
-    -server -Xms256m -Xmx256m -XX:+HeapDumpOnOutOfMemoryError \
+    -server \
+    -Xms512m -Xmx512m -XX:NewRatio=3 -XX:MaxTenuringThreshold=15 -XX:+HeapDumpOnOutOfMemoryError \
     -Dcom.sun.management.jmxremote \
     -Dtc.install-root="${tc_install_dir}" \
     -Dtc.config=/opt/terracotta/tc-config.xml \

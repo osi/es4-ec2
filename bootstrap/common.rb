@@ -78,7 +78,7 @@ end
 
 module Terracotta
   INSTALL_ROOT = "/opt/terracotta"
-  DISTRIBUTION = "http://s3.amazonaws.com/TCreleases/terracotta-generic-2.7.0.tar.gz"
+  DISTRIBUTION = "http://s3.amazonaws.com/TCreleases/terracotta-3.1.0.tar.gz"
 
   class Installer
 
@@ -89,12 +89,12 @@ module Terracotta
       
       Shell.download_and_extract DISTRIBUTION, { :directory => INSTALL_ROOT }
 
-      FileUtils.ln_s "#{INSTALL_ROOT}/terracotta-2.7.0/", "#{INSTALL_ROOT}/terracotta"
+      FileUtils.ln_s "#{INSTALL_ROOT}/terracotta-3.1.0/", "#{INSTALL_ROOT}/terracotta"
     end
     
     def setup_client
       Shell.do "Creating boostrap jar", "export JAVA_HOME=/usr/lib/jvm/java-6-sun && #{INSTALL_ROOT}/terracotta/bin/make-boot-jar.sh"
-      Shell.do "Fixing startup script", "sed -i -e 1i'#!/bin/bash' -e 1d /opt/terracotta/terracotta/bin/dso-java.sh"
+      # Shell.do "Fixing startup script", "sed -i -e 1i'#!/bin/bash' -e 1d /opt/terracotta/terracotta/bin/dso-java.sh"
     end
     
     def setup_server
