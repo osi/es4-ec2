@@ -13,6 +13,6 @@ args = Shell.prepare_tar_args( { :exclude => %w(.svn .DS_Store ._* .git *~),
 
 Shell.do "Creating #{tarball}", "export COPYFILE_DISABLE=true && tar #{args} -czvf #{tarball} ."
 
-Shell.do "Uploading #{tarball}", "scp #{tarball} dev.electrotank.com:/opt/ec2"
+Shell.do "Uploading #{tarball}", "scp #{tarball} scott@dev.electrotank.com:/opt/ec2"
 
 FileUtils.rm tarball

@@ -144,6 +144,9 @@ end
 
 # ------
 
+# First make sure the machine has what we need
+Dependencies.prepareServer
+
 installer = ElectroServer::Installer.new
 
 opts = OptionParser.new do |opts|

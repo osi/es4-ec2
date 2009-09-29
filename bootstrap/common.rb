@@ -1,3 +1,24 @@
+class Dependencies
+    def Dependencies.prepareServer
+        puts "Preparing server"
+
+        File.open("/etc/apt/sources.list.d/dev-ppa.list", 'w') do |run|
+        run.puts <<-EOF
+            deb http://ppa.launchpad.net/amoog/amoog-devel/ubuntu jaunty main
+            deb-src http://ppa.launchpad.net/amoog/amoog-devel/ubuntu jaunty main
+            EOF
+        end
+
+        Shell.do( "Adding daemontools patch repo key", "apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 5AFE82CE")
+
+        Shell.do( "Update apt-get libraries", "apt-get update" )
+        Shell.do( "Upgrade all installed libraries to the latest", "apt-get upgrade -y" )
+        Shell.do( "Installing software", "apt-get install -y openjdk-6-jdk daemontools daemontools-run svtools vim" )
+
+        FileUtils.ln_s "/etc/service", "/service"
+    end
+end
+
 class Shell
   CURL_OPTS = "-s -S -f -L --retry 7"
 

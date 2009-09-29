@@ -22,6 +22,10 @@ opts = OptionParser.new do |opts|
   opts.on( "-i", "--ami-id ami_id", "ID of the AMI to launch" ) do |opt|
     aws.ami_id = opt
   end
+
+  opts.on( "-t", "--instance-type type_name", "The name of the instance type to launch ( Defaults to 'c1.medium' )" ) do |opt|
+    aws.instance_type = opt
+  end
   
   modes = [:StandAlone, :Distributed, :Cluster, :Jet, :LoadTester]
   opts.on( "-m", "--mode mode", modes, "Type of instance to setup mode to use (#{modes.join(', ')})" ) do |opt|

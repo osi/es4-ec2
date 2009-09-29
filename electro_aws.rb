@@ -4,7 +4,7 @@ require 'right_aws'
 module ElectroAws
 
   class Controller
-    attr_accessor :access_key, :secret_key, :ami_id, :mode, :groups, :gateways, :keypair, :debug
+    attr_accessor :access_key, :secret_key, :ami_id, :mode, :groups, :gateways, :keypair, :debug, :instance_type
     attr_reader :ec2, :passphrase
 
     def initialize
@@ -12,6 +12,7 @@ module ElectroAws
       @groups = []
       @gateways = 1
       @passphrase = (0...50).map{ ('a'..'z').to_a[rand(26)] }.join
+      @instance_type = 'c1.medium'
     end
 
     def provision
@@ -38,7 +39,7 @@ module ElectroAws
     end
     
     def run_instances(count, init_script)
-      @ec2.run_instances @ami_id, count, count, @groups, @keypair, init_script, nil, 'c1.medium'
+      @ec2.run_instances @ami_id, count, count, @groups, @keypair, init_script, nil, @instance_type
     end
   end
   
@@ -199,6 +200,9 @@ cp /etc/motd.tail /var/run/motd
       
       script = %Q{
 #!/bin/sh
+
+apt-get update
+apt-get install vim openjdk-6-jdk
 
 mkdir -p /opt/loadtest
 
