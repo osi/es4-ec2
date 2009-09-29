@@ -9,6 +9,9 @@ require 'fileutils'
 require '/var/spool/ec2/meta-data'
 require '../common'
 
+# Need to make sure the server is set up properly
+Dependencies.prepareServer
+
 installer = Terracotta::Installer.new
 installer.install
 installer.setup_server
