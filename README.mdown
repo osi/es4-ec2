@@ -6,7 +6,7 @@ This is a set of scripts for managing [ElectroServer](http://www.electro-server.
 HOW IT WORKS
 ============
 
-The scripts will launch an Ubuntu AMI that is pre-configured to have Java 6 and daemontools installed. It utilizes the *user-data* feature of the [alestic](http://alestic.com/) AMI's to send a shell script as part of the AMI boot that downloads code from this project and sets up the system.
+The scripts will launch an Ubuntu AMI without any dependencies installed. It utilizes the *user-data* feature of the [alestic](http://alestic.com/) AMI's to send a shell script as part of the AMI boot that downloads code from this project and sets up the system.  The AMIs that alestic builds are perfect for use with these scripts.
 
 USAGE
 =====
