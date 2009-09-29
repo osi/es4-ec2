@@ -16,6 +16,8 @@ class Dependencies
         Shell.do( "Installing software", "apt-get install -y openjdk-6-jdk daemontools daemontools-run svtools vim" )
 
         FileUtils.ln_s "/etc/service", "/service"
+
+        Shell.do( "Setting max open file descriptors to 150000", "ulimit -n 150000" )
     end
 end
 
