@@ -19,7 +19,7 @@ opts = OptionParser.new do |opts|
     aws.secret_key = opt
   end
   
-  opts.on( "-i", "--ami-id ami_id", "ID of the AMI to launch" ) do |opt|
+  opts.on( "-i", "--ami-id ami_id", "ID of the AMI to launch. Defaults to an alestic.com Ubuntu 9.04 server AMI for the corresponding instance type" ) do |opt|
     aws.ami_id = opt
   end
 
