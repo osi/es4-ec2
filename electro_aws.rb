@@ -221,7 +221,7 @@ cp /etc/motd.tail /var/run/motd
 #!/bin/sh
 
 apt-get update
-apt-get install -y vim openjdk-6-jdk
+apt-get install -y openjdk-6-jdk
 
 mkdir -p /opt/loadtest
 

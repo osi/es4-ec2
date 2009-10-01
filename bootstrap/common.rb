@@ -13,7 +13,7 @@ class Dependencies
 
         Shell.do( "Update apt-get libraries", "apt-get update" )
         Shell.do( "Upgrade all installed libraries to the latest", "apt-get upgrade -y" )
-        Shell.do( "Installing software", "apt-get install -y openjdk-6-jdk daemontools daemontools-run svtools vim" )
+        Shell.do( "Installing software", "apt-get install -y openjdk-6-jdk daemontools daemontools-run svtools" )
 
         FileUtils.ln_s "/etc/service", "/service"
     end
