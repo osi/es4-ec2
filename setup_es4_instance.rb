@@ -44,6 +44,10 @@ opts = OptionParser.new do |opts|
     aws.gateways = gateways
   end
   
+  opts.on( "--nodes count", Integer, "Number of nodes to launch when in clustered mode. Defaults to 2" ) do |gateways|
+    aws.cluster_nodes = cluster_nodes
+  end
+  
   opts.on( "-d", "--debug", String, "Option description." ) do |opt|
     aws.debug = true    
   end

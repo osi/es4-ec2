@@ -4,7 +4,7 @@ require 'right_aws'
 module ElectroAws
 
   class Controller
-    attr_accessor :access_key, :secret_key, :ami_id, :mode, :groups, :gateways, :keypair, :debug, :instance_type
+    attr_accessor :access_key, :secret_key, :ami_id, :mode, :groups, :gateways, :keypair, :debug, :instance_type, :cluster_nodes
     attr_reader :ec2, :passphrase
 
     def initialize
@@ -13,6 +13,7 @@ module ElectroAws
       @gateways = 1
       @passphrase = (0...50).map{ ('a'..'z').to_a[rand(26)] }.join
       @instance_type = 'c1.medium'
+      @cluster_nodes = 2
     end
     
     def ami_id
@@ -200,8 +201,14 @@ cp /etc/motd.tail /var/run/motd
     include Clustered
     
     def provision
-      puts "Provisioning Jet instance ..."
-      wait_for_start @aws.run_instances(1, es4_init_script)[0][:aws_instance_id]
+      if @terracotta_servers.nil?
+        puts "Provisioning Jet instance ..."
+        wait_for_start @aws.run_instances(1, es4_init_script)[0][:aws_instance_id]
+      else
+        puts "Provisioning Jet #{@aws.cluster_nodes} instances ..."
+        instance_ids = @aws.run_instances(@aws.cluster_nodes, es4_init_script).collect { |instance| instance[:aws_instance_id] }
+        wait_for_start instance_ids
+      end
     end
   end
   
@@ -250,13 +257,9 @@ curl -s -S -f -L --retry 7 http://dev.electrotank.com/ec2/es4-loadtester.tar.gz 
       tc = Terracotta.new @aws
       tc.provision
       
-      standalone = StandAlone.new @aws
-      standalone.terracotta_servers = [tc.dns_name]
-      standalone.provision
-      
-      distributed = Distributed.new @aws
-      distributed.terracotta_servers = [tc.dns_name]
-      distributed.provision
+      jet = Jet.new @aws
+      jet.terracotta_servers = [tc.dns_name]
+      jet.provision
     end
   end
 end
