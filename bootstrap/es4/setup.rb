@@ -81,7 +81,7 @@ EOF
         Derby.open("#{ES_ROOT}/db") { |derby| derby.puts "UPDATE GATEWAYLISTENERS SET HOSTNAME = '0.0.0.0';" }
       when :Jet
         Derby.open("#{ES_ROOT}/db") do |derby|
-          derby.puts "UPDATE ThreadingSettings SET processorThreadCount = 100;"
+          derby.puts "UPDATE ThreadingSettings SET processorThreadCount = 250;"
           derby.puts "UPDATE GATEWAYLISTENERS SET HOSTNAME = '0.0.0.0';"
           derby.puts "UPDATE CommunicationSettings SET CONCURRENTUSERLIMIT = 500000;"
         end
