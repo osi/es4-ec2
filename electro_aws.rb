@@ -204,9 +204,6 @@ cp /etc/motd.tail /var/run/motd
 apt-get update
 apt-get install -y vim openjdk-6-jdk
 
-echo "Setting max open file descriptors to 150000"
-ulimit -n 150000
-
 mkdir -p /opt/loadtest
 
 cd /opt/loadtest
