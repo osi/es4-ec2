@@ -114,7 +114,7 @@ module Terracotta
     end
     
     def setup_client
-      Shell.do "Creating boostrap jar", "export JAVA_HOME=/usr/lib/jvm/java-6-sun && #{INSTALL_ROOT}/terracotta/bin/make-boot-jar.sh"
+      Shell.do "Creating boostrap jar", "export JAVA_HOME=/usr/lib/jvm/java-6-openjdk && #{INSTALL_ROOT}/terracotta/bin/make-boot-jar.sh"
       # Shell.do "Fixing startup script", "sed -i -e 1i'#!/bin/bash' -e 1d /opt/terracotta/terracotta/bin/dso-java.sh"
     end
     
