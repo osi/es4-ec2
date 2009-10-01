@@ -8,11 +8,23 @@ module ElectroAws
     attr_reader :ec2, :passphrase
 
     def initialize
-      @ami_id = "ami-4eda3e27"
+      @ami_id = nil
       @groups = []
       @gateways = 1
       @passphrase = (0...50).map{ ('a'..'z').to_a[rand(26)] }.join
       @instance_type = 'c1.medium'
+    end
+    
+    def ami_id
+      if @ami_id.nil?
+        if ['m1.small', 'c1.medium'].include?(@instance_type)
+          "ami-ed46a784"
+        else
+          "ami-5b46a732"
+        end
+      else
+        @ami_id
+      end
     end
 
     def provision
@@ -39,7 +51,7 @@ module ElectroAws
     end
     
     def run_instances(count, init_script)
-      @ec2.run_instances @ami_id, count, count, @groups, @keypair, init_script, nil, @instance_type
+      @ec2.run_instances ami_id, count, count, @groups, @keypair, init_script, nil, @instance_type
     end
   end
   
