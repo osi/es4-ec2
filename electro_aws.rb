@@ -16,6 +16,18 @@ module ElectroAws
       @cluster_nodes = 2
     end
     
+    def cluster_nodes
+      if @cluster_nodes.nil?
+        if @mode == :Cluster
+          2
+        else
+          1
+        end
+      else
+        @cluster_nodes
+      end
+    end
+    
     def ami_id
       if @ami_id.nil?
         if ['m1.small', 'c1.medium'].include?(@instance_type)
@@ -59,6 +71,11 @@ module ElectroAws
   class Instance
     def initialize(aws)
       @aws = aws
+    end
+    
+    def run_and_wait_for_start(count, init_script)
+      instance_ids = @aws.run_instances(count, init_script).collect { |instance| instance[:aws_instance_id] }
+      wait_for_start instance_ids
     end
 
     def wait_for_start(*instance_ids)
@@ -168,8 +185,7 @@ cp /etc/motd.tail /var/run/motd
       puts " - provisioning #{@aws.gateways} gateway(s) ..."
       
       args = "-p #{@aws.passphrase} -r #{@registry_name}"
-      instance_ids = @aws.run_instances(@aws.gateways, es4_init_script(args)).collect { |instance| instance[:aws_instance_id] }
-      wait_for_start instance_ids
+      run_and_wait_for_start @aws.gateways, es4_init_script(args)
     end
   end
   
@@ -193,7 +209,7 @@ cp /etc/motd.tail /var/run/motd
     
     def provision
       puts "Provisioning Standalone instance ..."
-      wait_for_start @aws.run_instances(1, es4_init_script)[0][:aws_instance_id]
+      run_and_wait_for_start 1, es4_init_script
     end
   end
   
@@ -203,11 +219,10 @@ cp /etc/motd.tail /var/run/motd
     def provision
       if @terracotta_servers.nil?
         puts "Provisioning Jet instance ..."
-        wait_for_start @aws.run_instances(1, es4_init_script)[0][:aws_instance_id]
+        run_and_wait_for_start 1, es4_init_script
       else
-        puts "Provisioning Jet #{@aws.cluster_nodes} instances ..."
-        instance_ids = @aws.run_instances(@aws.cluster_nodes, es4_init_script).collect { |instance| instance[:aws_instance_id] }
-        wait_for_start instance_ids
+        puts "Provisioning Jet #{@aws.cluster_nodes} instance(s) ..."
+        run_and_wait_for_start @aws.cluster_nodes, es4_init_script
       end
     end
   end
@@ -215,7 +230,7 @@ cp /etc/motd.tail /var/run/motd
   class LoadTester < Instance
     
     def provision
-      puts "Provisioning load tester instance ..."
+      puts "Provisioning #{@aws.cluster_nodes} load tester instance(s) ..."
       
       script = %Q{
 #!/bin/sh
@@ -223,13 +238,22 @@ cp /etc/motd.tail /var/run/motd
 apt-get update
 apt-get install -y openjdk-6-jdk
 
+mkdir -p /opt/setup
+
+cd /opt/setup
+curl -s -S -f -L --retry 7 http://dev.electrotank.com/ec2/setup.tar.gz | tar xzof - 
+
+./fetchec2metadata.rb
+
 mkdir -p /opt/loadtest
 
 cd /opt/loadtest
 curl -s -S -f -L --retry 7 http://dev.electrotank.com/ec2/es4-loadtester.tar.gz  | tar xzof - 
+
+sed -i -e '/^NUMBER_OF_SERVERS=/s/1/#{@aws.cluster_nodes}/' run_test.sh
       }
       
-      wait_for_start @aws.run_instances(1, script)[0][:aws_instance_id]
+      run_and_wait_for_start @aws.cluster_nodes, script
     end
   end
   
