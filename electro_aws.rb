@@ -13,7 +13,7 @@ module ElectroAws
       @gateways = 1
       @passphrase = (0...50).map{ ('a'..'z').to_a[rand(26)] }.join
       @instance_type = 'c1.medium'
-      @cluster_nodes = 2
+      @cluster_nodes = nil
     end
     
     def cluster_nodes
