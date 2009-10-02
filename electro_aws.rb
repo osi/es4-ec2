@@ -236,7 +236,7 @@ cp /etc/motd.tail /var/run/motd
 #!/bin/sh
 
 apt-get update
-apt-get install -y openjdk-6-jdk
+apt-get install -y openjdk-6-jre-headless
 
 mkdir -p /opt/setup
 

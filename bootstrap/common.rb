@@ -12,8 +12,8 @@ class Dependencies
         Shell.do( "Adding daemontools patch repo key", "apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 5AFE82CE")
 
         Shell.do( "Update apt-get libraries", "apt-get update" )
-        Shell.do( "Upgrade all installed libraries to the latest", "apt-get upgrade -y" )
-        Shell.do( "Installing software", "apt-get install -y openjdk-6-jdk daemontools daemontools-run svtools" )
+        # Shell.do( "Upgrade all installed libraries to the latest", "apt-get upgrade -y" )
+        Shell.do( "Installing software", "apt-get install -y openjdk-6-jre-headless daemontools daemontools-run svtools" )
 
         FileUtils.ln_s "/etc/service", "/service"
     end
