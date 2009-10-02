@@ -96,7 +96,7 @@ module ElectroAws
 
       puts " - startup complete:"
       descriptors.each do |descriptor|
-        puts "    - #{descriptor[:aws_instance_id]} - #{descriptor[:dns_name]}"
+        puts "    - #{descriptor[:aws_instance_id]} - #{descriptor[:dns_name]} - #{descriptor[:private_dns_name]}"
       end
 
       descriptors
