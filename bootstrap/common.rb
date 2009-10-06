@@ -9,7 +9,24 @@ class Dependencies
             EOF
         end
 
-        Shell.do( "Adding daemontools patch repo key", "apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 5AFE82CE")
+        # Inline the keyto avoid dependency upon the keyserver
+        Shell.do( "Adding daemontools patch repo key", <<-EOF
+echo "-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: SKS 1.0.10
+
+mI0ESXepTAEEAMOETtlE16QMbYNzkFZL1nE8sw+LCx0JRo5EHVrAK1tUBM9R//mantklg3a8
+0upa0igNTJRqn5Tj7covMBO1yctYUdpm0QhJcg9i7CsT9S5XX1bdYMi75d357myh/F3BW57c
+S8tM6pqoR8DkneefJTlQnGqZL00JGs1zvktRFzUHABEBAAG0HkxhdW5jaHBhZCBQUEEgZm9y
+IEFuZHJlYXMgTW9vZ4i2BBMBAgAgBQJJd6lMAhsDBgsJCAcDAgQVAggDBBYCAwECHgECF4AA
+CgkQJL3WCVr+gs6KJwP+Ow60GH4NHchdqu1bIY2RQ8+8mkqkEbEFOIyV6gU8gzX7Iq/uBww5
+FHi/VL2lZIUU2ZnkB9xevI3HcfOrcRnmpYjQbZMg4MWlGiKO2kWmd4mEWacM7YoRmXN8K8Qx
+wEwszH2eTP6jEagZVm8IsI0zfBsaVX4F8wefJi+5mGXdSMc=
+=fKMI
+-----END PGP PUBLIC KEY BLOCK-----
+" | apt-key add -
+EOF
+        )
+        # apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 5AFE82CE
 
         Shell.do( "Update apt-get libraries", "apt-get update" )
         # Shell.do( "Upgrade all installed libraries to the latest", "apt-get upgrade -y" )
