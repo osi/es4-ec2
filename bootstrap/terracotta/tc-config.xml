@@ -22,19 +22,25 @@
     </servers>
 
     <system>
-        <configuration-model>production</configuration-model>
+        <configuration-model>development</configuration-model>
     </system>
 
     <clients>
-        <logs>terracotta/</logs>
+        <logs>terracotta/client-logs/%D</logs>
     </clients>
 
     <application>
         <dso>
             <instrumented-classes>
                 <include>
-                    <class-expression>com.electrotank.electroserver4.entities.managers.DeliveryManagerImpl</class-expression>
+                    <class-expression>
+                        com.electrotank.electroserver4.entities.managers.DistributedDeliveryManager
+                    </class-expression>
                     <honor-transient>true</honor-transient>
+                </include>
+                <include>
+                    <class-expression>com.electrotank.electroserver4.entities.managers.AbstractDeliveryManager
+                    </class-expression>
                 </include>
                 <include>
                     <class-expression>com.electrotank.electroserver4.entities.SingleUserDelivery</class-expression>
@@ -43,7 +49,8 @@
                     <class-expression>com.electrotank.electroserver4.entities.MultiUserDelivery</class-expression>
                 </include>
                 <include>
-                    <class-expression>com.electrotank.electroserver4.entities.managers.UserEventManager</class-expression>
+                    <class-expression>com.electrotank.electroserver4.entities.managers.UserEventManager
+                    </class-expression>
                     <honor-transient>true</honor-transient>
                 </include>
                 <include>
@@ -72,7 +79,7 @@
 
             <distributed-methods>
                 <method-expression>
-                    void com.electrotank.electroserver4.entities.managers.DeliveryManagerImpl.deliver(..)
+                    void com.electrotank.electroserver4.entities.managers.DistributedDeliveryManager.deliver(..)
                 </method-expression>
 
                 <method-expression>
@@ -87,26 +94,31 @@
                 </autolock>
                 <autolock>
                     <lock-level>write</lock-level>
-                    <method-expression>* com.electrotank.electroserver4.entities.MultiUserDelivery.*(..)</method-expression>
+                    <method-expression>* com.electrotank.electroserver4.entities.MultiUserDelivery.*(..)
+                    </method-expression>
                 </autolock>
                 <autolock>
                     <lock-level>write</lock-level>
-                    <method-expression>* com.electrotank.electroserver4.entities.SingleUserDelivery.*(..)</method-expression>
+                    <method-expression>* com.electrotank.electroserver4.entities.SingleUserDelivery.*(..)
+                    </method-expression>
                 </autolock>
                 <autolock>
                     <lock-level>write</lock-level>
-                    <method-expression>* com.electrotank.electroserver4.entities.managers.UserEventManager.*(..)</method-expression>
+                    <method-expression>* com.electrotank.electroserver4.entities.managers.UserEventManager.*(..)
+                    </method-expression>
                 </autolock>
                 <autolock>
                     <lock-level>write</lock-level>
-                    <method-expression>void com.electrotank.electroserver4.messages.AbstractMessage.setMessageNumber(int)</method-expression>
+                    <method-expression>void
+                        com.electrotank.electroserver4.messages.AbstractMessage.setMessageNumber(int)
+                    </method-expression>
                 </autolock>
             </locks>
 
             <roots>
                 <root>
                     <field-name>
-                        com.electrotank.electroserver4.servers.registry.DeliveryManagerComponentAdapter.manager
+                        com.electrotank.electroserver4.servers.registry.DistributedDeliveryManagerComponentAdapter.manager
                     </field-name>
                 </root>
 
@@ -122,10 +134,6 @@
 
                 <root>
                     <field-name>com.electrotank.electroserver4.entities.Users.nameToUserMap</field-name>
-                </root>
-
-                <root>
-                    <field-name>com.electrotank.electroserver4.entities.Users.currentUserCount</field-name>
                 </root>
 
                 <root>
