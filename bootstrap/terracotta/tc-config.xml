@@ -1,18 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-
-  All content copyright (c) 2003-2007 Terracotta, Inc.,
-  except as may otherwise be noted in a separate copyright notice.
-  All rights reserved.
-
--->
-<!--
- This is a Terracotta configuration file that has been pre-configured
- for use with DSO.  All classes are included for instrumentation,
- and all instrumented methods are write locked.
-
- For more information, please see the product documentation.
--->
 <tc:tc-config xmlns:tc="http://www.terracotta.org/config"
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
               xsi:schemaLocation="http://www.terracotta.org/config http://www.terracotta.org/schema/terracotta-5.xsd">
@@ -49,7 +35,8 @@
                     <class-expression>com.electrotank.electroserver4.entities.MultiUserDelivery</class-expression>
                 </include>
                 <include>
-                    <class-expression>com.electrotank.electroserver4.entities.managers.UserEventManager
+                    <class-expression>
+                        com.electrotank.electroserver4.entities.managers.UserEventManager
                     </class-expression>
                     <honor-transient>true</honor-transient>
                 </include>
@@ -75,11 +62,23 @@
                 <include>
                     <class-expression>com.electrotank.electroserver4.protocol.MessageClassification</class-expression>
                 </include>
+                <include>
+                    <class-expression>com.electrotank.electroserver4.entities.managers.BuddyListManagerImpl
+                    </class-expression>
+                </include>
+                <include>
+                    <class-expression>com.electrotank.electroserver4.entities.managers.BuddyListManagerImpl$*
+                    </class-expression>
+                </include>
             </instrumented-classes>
 
             <distributed-methods>
                 <method-expression>
-                    void com.electrotank.electroserver4.entities.managers.DistributedDeliveryManager.deliver(..)
+                    void com.electrotank.electroserver4.entities.managers.DistributedDeliveryManager.deliverSingles(..)
+                </method-expression>
+
+                <method-expression>
+                    void com.electrotank.electroserver4.entities.managers.DistributedDeliveryManager.deliverMultis(..)
                 </method-expression>
 
                 <method-expression>
@@ -94,25 +93,62 @@
                 </autolock>
                 <autolock>
                     <lock-level>write</lock-level>
-                    <method-expression>* com.electrotank.electroserver4.entities.MultiUserDelivery.*(..)
+                    <method-expression>
+                        * com.electrotank.electroserver4.entities.MultiUserDelivery.*(..)
                     </method-expression>
                 </autolock>
                 <autolock>
                     <lock-level>write</lock-level>
-                    <method-expression>* com.electrotank.electroserver4.entities.SingleUserDelivery.*(..)
+                    <method-expression>
+                        * com.electrotank.electroserver4.entities.SingleUserDelivery.*(..)
                     </method-expression>
                 </autolock>
                 <autolock>
                     <lock-level>write</lock-level>
-                    <method-expression>* com.electrotank.electroserver4.entities.managers.UserEventManager.*(..)
+                    <method-expression>
+                        * com.electrotank.electroserver4.entities.managers.UserEventManager.*(..)
                     </method-expression>
                 </autolock>
                 <autolock>
                     <lock-level>write</lock-level>
-                    <method-expression>void
-                        com.electrotank.electroserver4.messages.AbstractMessage.setMessageNumber(int)
+                    <method-expression>
+                        void com.electrotank.electroserver4.messages.AbstractMessage.setMessageNumber(int)
                     </method-expression>
                 </autolock>
+
+                <named-lock>
+                    <lock-name>buddies</lock-name>
+                    <lock-level>write</lock-level>
+                    <method-expression>
+                        * com.electrotank.electroserver4.entities.managers.BuddyListManagerImpl.doAddBuddy(..)
+                    </method-expression>
+                </named-lock>
+
+                <named-lock>
+                    <lock-name>buddies</lock-name>
+                    <lock-level>write</lock-level>
+                    <method-expression>
+                        * com.electrotank.electroserver4.entities.managers.BuddyListManagerImpl.doRemoveBuddy(..)
+                    </method-expression>
+                </named-lock>
+
+                <named-lock>
+                    <lock-name>buddies</lock-name>
+                    <lock-level>write</lock-level>
+                    <method-expression>
+                        void
+                        com.electrotank.electroserver4.entities.managers.BuddyListManagerImpl$UserLogout.onMessage(..)
+                    </method-expression>
+                </named-lock>
+
+                <named-lock>
+                    <lock-name>buddies</lock-name>
+                    <lock-level>write</lock-level>
+                    <method-expression>
+                        void
+                        com.electrotank.electroserver4.entities.managers.BuddyListManagerImpl$UserLogin.onMessage(..)
+                    </method-expression>
+                </named-lock>
             </locks>
 
             <roots>
@@ -137,18 +173,14 @@
                 </root>
 
                 <root>
-                    <field-name>com.electrotank.electroserver4.entities.managers.BuddyListManager.lock</field-name>
-                </root>
-
-                <root>
                     <field-name>
-                        com.electrotank.electroserver4.entities.managers.BuddyListManager.buddiesForUser
+                        com.electrotank.electroserver4.entities.managers.BuddyListManagerImpl.buddiesForUser
                     </field-name>
                 </root>
 
                 <root>
                     <field-name>
-                        com.electrotank.electroserver4.entities.managers.BuddyListManager.usersWithBuddy
+                        com.electrotank.electroserver4.entities.managers.BuddyListManagerImpl.usersWithBuddy
                     </field-name>
                 </root>
             </roots>
