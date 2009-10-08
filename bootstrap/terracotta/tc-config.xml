@@ -13,6 +13,10 @@
 
     <clients>
         <logs>terracotta/client-logs/%D</logs>
+
+        <modules>
+            <module name="tim-concurrent-collections" version="1.2.0"/>
+        </modules>
     </clients>
 
     <application>

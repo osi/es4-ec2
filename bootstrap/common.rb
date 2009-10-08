@@ -132,6 +132,7 @@ module Terracotta
     
     def setup_client
       Shell.do "Creating boostrap jar", "export JAVA_HOME=/usr/lib/jvm/java-6-openjdk && #{INSTALL_ROOT}/terracotta/bin/make-boot-jar.sh"
+      Shell.do "Installing concurrent collections TIM", "export JAVA_HOME=/usr/lib/jvm/java-6-openjdk && #{INSTALL_ROOT}/terracotta/bin/tim-get.sh install tim-concurrent-collections"
       # Shell.do "Fixing startup script", "sed -i -e 1i'#!/bin/bash' -e 1d /opt/terracotta/terracotta/bin/dso-java.sh"
     end
     
