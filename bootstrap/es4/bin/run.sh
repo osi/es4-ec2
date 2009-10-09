@@ -11,6 +11,7 @@ fi
 cd $dir
 
 exec $java_cmd \
+     -agentpath:/opt/electroserver/profiler/`uname -m`/libyjpagent.so \
      -server \
      -Xmx1500M \
      -XX:+HeapDumpOnOutOfMemoryError \

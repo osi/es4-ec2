@@ -113,6 +113,7 @@ EOF
     def setup_service(user)
       puts "Setting up service ..."
 
+      FileUtils.cp_r 'profiler/', INSTALL_ROOT
       FileUtils.cp 'bin/run.sh', ES_ROOT
       MODES.each { |mode| FileUtils.ln_s "#{ES_ROOT}/run.sh", "#{ES_ROOT}/#{mode}" }
 
