@@ -3,6 +3,10 @@
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
               xsi:schemaLocation="http://www.terracotta.org/config http://www.terracotta.org/schema/terracotta-5.xsd">
 
+    <tc-properties>
+        <property name="l2.objectmanager.dgc.young.enabled" value="true"/>
+    </tc-properties>
+
     <servers>
         <server host="%i" name="sample"/>
     </servers>
