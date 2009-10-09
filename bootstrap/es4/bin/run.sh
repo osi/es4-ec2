@@ -17,6 +17,7 @@ exec $java_cmd \
      -XX:+HeapDumpOnOutOfMemoryError \
      -XX:HeapDumpPath=../ \
      -Djava.awt.headless=true \
+     -Des4.protocol.jet.worker-threads=$JET_WORKER_THREADS \
      -jar lib/ElectroServer4-bootstrap.jar \
      -mode $self \
      -config config/ES4Configuration.xml
